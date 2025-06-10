@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -40,7 +41,6 @@ fun TTSScreen() {
 
     val allVoices = remember { mutableStateListOf<Voice>() }
     var accentOptions by remember { mutableStateOf(listOf<String>()) }
-
     var ttsReady by remember { mutableStateOf(false) }
 
     val tts = remember {
@@ -56,7 +56,20 @@ fun TTSScreen() {
         }
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        verticalArrangement = Arrangement.Top
+    ) {
+        Text(
+            text = "Text to Speech",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 24.dp)
+        )
+
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
@@ -66,12 +79,11 @@ fun TTSScreen() {
                 .height(150.dp)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         LanguageDropdown(selectedLanguage) {
             selectedLanguage = it
 
-            // Setear idioma
             val locale = when (it) {
                 "Español" -> Locale("es", "ES")
                 "Inglés" -> Locale("en", "US")
@@ -96,16 +108,19 @@ fun TTSScreen() {
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        if (accentOptions.isNotEmpty()) {
-            AccentDropdown(accentOptions, selectedAccent) {
-                selectedAccent = it
-            }
+        AccentDropdown(
+            options = accentOptions,
+            selected = selectedAccent,
+            onSelect = { selectedAccent = it },
+            enabled = accentOptions.isNotEmpty()
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-            Button(onClick = {
+        Button(
+            onClick = {
                 if (!ttsReady || text.isBlank()) return@Button
 
                 val selectedVoice = allVoices.firstOrNull {
@@ -117,12 +132,14 @@ fun TTSScreen() {
                 }
 
                 tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
-            }) {
-                Text("Reproducir")
-            }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Reproducir")
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,16 +168,25 @@ fun LanguageDropdown(selected: String, onSelect: (String) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccentDropdown(options: List<String>, selected: String, onSelect: (String) -> Unit) {
+fun AccentDropdown(
+    options: List<String>,
+    selected: String,
+    onSelect: (String) -> Unit,
+    enabled: Boolean = true
+) {
     var expanded by remember { mutableStateOf(false) }
 
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { if (enabled) expanded = !expanded }
+    ) {
         OutlinedTextField(
             value = selected,
             onValueChange = {},
             readOnly = true,
             label = { Text("Acento") },
-            modifier = Modifier.menuAnchor()
+            modifier = Modifier.menuAnchor(),
+            enabled = enabled
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach {
